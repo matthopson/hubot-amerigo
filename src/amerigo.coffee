@@ -108,8 +108,13 @@ module.exports = (robot) ->
 
               if showDirections
                 route.legs[0].steps.forEach (step) ->
-                  # Replace <b> tags with *
-                  instruction = step.html_instructions.replace(/<b>|<\/b>/g, "*")
+
+                  instruction = step.html_instructions
+                    # Replace <b> tags with *
+                    .replace(/<b>|<\/b>/g, "*")
+                    # Strip the remaining HTML
+                    .replace(/<[^>]*>/g, '')
+
                   directions.push "#{instruction} - (#{step.distance.text}/#{step.duration.text})"
 
               responseText = "It looks like you're about `#{distance} (#{duration})` from @#{user.name}"
