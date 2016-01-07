@@ -32,9 +32,9 @@ module.exports = (robot) ->
 
 
   # Sets a user's location
-  robot.respond /set location (.*)/i, (res) ->
-    rawLocation = res.match[1]
-    console.log rawLocation
+  robot.respond /(set location|i'm at|i'm in) (.*)/i, (res) ->
+    rawLocation = res.match[2]
+
     # Geocode raw location
     query = "https://maps.googleapis.com/maps/api/geocode/json?address=#{rawLocation}"
     robot.http(query)
@@ -75,10 +75,16 @@ module.exports = (robot) ->
 
 
   # Calculate the distance between two users
-  robot.respond /how far am I from @?([\w .\-]+)\?*$/i, (res) ->
-    userName = res.match[1].trim().toLowerCase()
+  robot.respond /(how far am I from|give me directions to) @?([\w .\-]+)\?*$/i, (res) ->
+    command = res.match[1].trim().toLowerCase()
+    userName = res.match[2].trim().toLowerCase()
     if userName.charAt(0) is '@'
       userName = userName.substr 1
+
+    # Should we give directions?
+    showDirections = false
+    if command.indexOf('directions') > -1
+      showDirections = true
 
     if userName == "the moon"
       res.reply "In order to give you an accurate answer, I first need to know _exactly_ how high you are... But it's probably around 239,000 miles."
@@ -98,7 +104,21 @@ module.exports = (robot) ->
               distance = route.legs[0].distance.text
               duration = route.legs[0].duration.text
 
-              res.reply "It looks like you're about `#{distance} (#{duration})` from @#{user.name}"
+              directions = []
+
+              if showDirections
+                route.legs[0].steps.forEach (step) ->
+                  # Replace <b> tags with *
+                  instruction = step.html_instructions.replace(/<b>|<\/b>/g, "*")
+                  directions.push "#{instruction} - (#{step.distance.text}/#{step.duration.text})"
+
+              responseText = "It looks like you're about `#{distance} (#{duration})` from @#{user.name}"
+
+              if directions.length > 0
+                directionsList = directions.join('\n')
+                res.reply "#{responseText}\n\n#{directionsList}"
+              else
+                res.reply responseText
             else
               res.reply "I apologize, there was problem calculating the distance."
         else
