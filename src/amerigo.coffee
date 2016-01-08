@@ -5,7 +5,9 @@
 #   None
 #
 # Commands:
-#   #
+#   set location <location> - Sets your current location.
+#   where is <user> - Get a user's location.
+#   how far am I from <user> - Get your distance from another user.
 #
 # Notes:
 #   None
@@ -117,7 +119,7 @@ module.exports = (robot) ->
 
                   directions.push "#{instruction} - (#{step.distance.text}/#{step.duration.text})"
 
-              responseText = "It looks like you're about `#{distance} (#{duration})` from @#{user.name}"
+              responseText = "It looks like you're about `#{distance} (#{duration})` from @#{user.name}\nHere's a link to the directions: https://www.google.com/maps/dir/#{myUser.location.latitude},#{myUser.location.longitude}/#{user.location.latitude},#{user.location.longitude}"
 
               if directions.length > 0
                 directionsList = directions.join('\n')
