@@ -7,6 +7,7 @@
 # Commands:
 #   set location <location> - Sets your current location.
 #   where is <user> - Get a user's location.
+#   where is [everybody | everyone] - Get all user locations - [beta].
 #   how far am I from <user> - Get your distance from another user.
 #
 # Notes:
@@ -32,6 +33,22 @@ module.exports = (robot) ->
 
     return foundUser
 
+  getStaticMap = (locations) ->
+    if Array.isArray(locations)
+      locationQueries = "size=800x600"
+
+      for location in locations
+        locationQueries += "&markers=color:red%7C#{location.latitude},#{location.longitude}"
+
+        if location.hasOwnProperty('label')
+          locationQueries += "&label:#{location.label}"
+    else
+      location = locations
+      locationQueries = "center=#{location.latitude},#{location.longitude}&zoom=6&size=800x600&markers=color:red%7C#{location.latitude},#{location.longitude}"
+
+    staticMap = "https://maps.googleapis.com/maps/api/staticmap?#{locationQueries}"
+
+    return staticMap
 
   # Sets a user's location
   robot.respond /(set location|i'm at|i'm in) (.*)/i, (res) ->
@@ -64,16 +81,34 @@ module.exports = (robot) ->
     if userName.charAt(0) is '@'
       userName = userName.substr 1
 
-    user = findUser userName
-    unless user?
-      res.reply "I'm sorry, I could not find this user: `@#{userName}`"
-    else
-      location = user.location
-      if location?
-        staticMap = "https://maps.googleapis.com/maps/api/staticmap?center=#{location.latitude},#{location.longitude}&zoom=6&size=800x600&markers=color:red%7C#{location.latitude},#{location.longitude}"
-        res.reply "#{userName}'s last-known location is #{location.formattedAddress}.\n" + staticMap
+    if userName is 'everybody' or userName is 'everyone'
+      # Do some er'body stuff
+      usersQuery = []
+      for index, user of robot.brain.data.users
+        if user.location?
+          userQuery = {
+            latitude: user.location.latitude,
+            longitude: user.location.longitude,
+            label: user.name.charAt(0).toUpperCase()
+          }
+          usersQuery.push(userQuery)
+
+      if usersQuery.length
+        res.reply "Here are all the users I konw about.\n" +
+        getStaticMap(usersQuery)
       else
-        res.reply "I can't find a location for this user."
+        res.reply "Sorry, I don't know about any user locations."
+    else
+      # Single person
+      user = findUser userName
+      unless user?
+        res.reply "I'm sorry, I could not find this user: `@#{userName}`"
+      else
+        location = user.location
+        if location?
+          res.reply "#{userName}'s last-known location is #{location.formattedAddress}.\n" + getStaticMap(location)
+        else
+          res.reply "I can't find a location for this user."
 
 
   # Calculate the distance between two users
