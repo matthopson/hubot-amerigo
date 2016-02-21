@@ -38,10 +38,13 @@ module.exports = (robot) ->
       locationQueries = "size=800x600"
 
       for location in locations
-        locationQueries += "&markers=color:red%7C#{location.latitude},#{location.longitude}"
-
         if location.hasOwnProperty('label')
-          locationQueries += "&label:#{location.label}"
+          label = "label:#{location.label}%7C"
+        else
+          label = ''
+
+        locationQueries += "&markers=color:red%7C#{label}#{location.latitude},#{location.longitude}"
+
     else
       location = locations
       locationQueries = "center=#{location.latitude},#{location.longitude}&zoom=6&size=800x600&markers=color:red%7C#{location.latitude},#{location.longitude}"
@@ -94,7 +97,7 @@ module.exports = (robot) ->
           usersQuery.push(userQuery)
 
       if usersQuery.length
-        res.reply "Here are all the users I konw about.\n" +
+        res.reply "Here are all the users I know about (#{usersQuery.length} total).\n" +
         getStaticMap(usersQuery)
       else
         res.reply "Sorry, I don't know about any user locations."
